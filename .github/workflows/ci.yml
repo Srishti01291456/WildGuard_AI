@@ -22,3 +22,5 @@ jobs:
         run: ruff check .
       - name: Test
         run: pytest -q
+      - name: Smoke-test the training pipeline
+        run: python scripts/train_models.py

@@ -12,6 +12,15 @@
       "justMyCode": false
     },
     {
+      "name": "Train models (CLI)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/train_models.py",
+      "args": ["--force"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Pytest: full suite",
       "type": "debugpy",
       "request": "launch",

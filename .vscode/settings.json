@@ -4,13 +4,16 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestArgs": ["tests"],
   "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "python.analysis.typeCheckingMode": "basic",
   "editor.formatOnSave": true,
   "editor.rulers": [120],
   "files.exclude": {
     "**/__pycache__": true,
-    "**/.pytest_cache": true
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
   },
   "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     }

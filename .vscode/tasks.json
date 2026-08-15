@@ -11,13 +11,26 @@
       "label": "Run dashboard",
       "type": "shell",
       "command": "streamlit run app.py",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Train models",
+      "type": "shell",
+      "command": "python scripts/train_models.py --force",
       "problemMatcher": []
     },
     {
       "label": "Run tests",
       "type": "shell",
       "command": "pytest -q",
-      "group": "test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint (ruff)",
+      "type": "shell",
+      "command": "ruff check .",
       "problemMatcher": []
     }
   ]

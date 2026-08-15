@@ -10,5 +10,6 @@ env/
 .DS_Store
 .env
 
-# generated sample data
+# generated sample data and trained model artefacts
 data/*.csv
+models/*.joblib

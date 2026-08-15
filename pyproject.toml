@@ -1,16 +1,22 @@
 [project]
 name = "wildguard-ai"
-version = "1.0.0"
-description = "WildGuard AI - Streamlit threat intelligence dashboard with IOC risk scoring, smart alerts and event analytics"
+version = "2.0.0"
+description = "WildGuard AI - machine-learning platform for wildlife protection: poaching-risk scoring, smart alerts and wildlife event analytics"
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+filterwarnings = ["ignore::UserWarning"]
 
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+extend-exclude = [".venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"pages/*" = ["E402"]
+"scripts/*" = ["E402"]
