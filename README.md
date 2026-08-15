@@ -1,81 +1,147 @@
-# 🛡️ WildGuard AI — Threat Intelligence Dashboard
+# 🐘 WildGuard AI — Wildlife Protection Intelligence
 
-A SOC-style Streamlit dashboard that turns raw security event logs into intelligence, alerts and analytics.
-Built to be demo-ready for internships and resumes: no external API keys, no database, one command to run.
+An end-to-end **AI/ML project with a professional Streamlit dashboard**. WildGuard AI ingests
+wildlife-reserve telemetry (camera traps, acoustic sensors, GPS collars, drones and ranger
+reports), predicts the **probability that a detection belongs to a poaching event**, turns those
+predictions into a **prioritised alert queue for rangers**, and explains what is happening in the
+reserve through **wildlife event analytics**.
 
-## Highlight features
+No API keys, no database, no cloud services — `streamlit run app.py` and everything works.
 
-| Feature | What it does |
-| --- | --- |
-| 🛡️ **Threat Intelligence** | Correlates every source IP against a threat-intel feed (AbuseIPDB / OTX / MISP style) and computes an **explainable 0–100 risk score** from IOC confidence, event severity, block ratio, event volume and target spread. Each score can be broken down per component in the UI. |
-| 🚨 **Smart Alerts** | Detection engine with 6 rules — credential brute force (rolling window), allowed traffic from known-bad IOCs, data exfiltration, network reconnaissance, off-hours privileged activity and a **z-score volume anomaly detector**. Every alert is mapped to a **MITRE ATT&CK** technique and thresholds are tunable live from the sidebar. |
-| 📊 **Event Analytics** | Five interactive Plotly views — volume timeline by action, event-type breakdown, hour-of-day heatmap, source-country split and a risk-vs-activity bubble chart — all driven by the same filters, with CSV export. |
+---
+
+## The three headline features
+
+Each feature is a **separate page** in the dashboard and is highlighted on the home page.
+
+| Page | Feature | What it actually does | ML behind it |
+| --- | --- | --- | --- |
+| 1 | 🧠 **Threat Intelligence** | Scores every detection 0-100, aggregates into zone threat profiles, clusters geospatial poaching hotspots and ships a full model card (ROC, confusion matrix, permutation importances) plus a what-if scorer | `HistGradientBoostingClassifier`, `KMeans` |
+| 2 | 🚨 **Smart Alert System** | Fuses model risk, unsupervised anomalies and 9 ranger rules into one ranked, de-duplicated alert queue — every alert carries its evidence and a recommended field action, with live-tunable thresholds | `IsolationForest` + rule fusion |
+| 3 | 📊 **Wildlife Event Intelligence** | Species activity, hour-by-zone heatmaps, signal mix, Shannon biodiversity per zone, sensor-fleet health and a risk-weighted detection map, all filterable and exportable | Diversity metrics, aggregation |
 
 ## Quickstart
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+git clone https://github.com/Srishti01291456/WildGuard_AI.git
+cd WildGuard_AI
+
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-streamlit run app.py
+
+streamlit run app.py               # http://localhost:8501
 ```
 
-Open http://localhost:8501. Sample data (~4,000 events + 60 IOCs) is generated on first run into `data/`.
+On first run the app generates ~6,000 synthetic detections into `data/`, trains both models and
+caches them in `models/`. Subsequent runs load the cached models instantly.
 
-## Use your own data
+Train from the command line instead (prints the metrics and hotspots):
 
-Upload CSVs from the sidebar.
+```bash
+python scripts/train_models.py            # train or reuse cached models
+python scripts/train_models.py --force    # always retrain
+```
 
-* **Event log** — required: `timestamp`, `source_ip`, `event_type`. Optional: `dest_ip`, `user`, `country`, `action` (`allowed`/`blocked`), `severity` (1–5), `bytes_out`. Missing optional columns are filled with safe defaults, bad timestamps are dropped.
-* **IOC feed** — required: `indicator`. Optional: `threat_type`, `confidence` (0–100), `source`.
-
-## Project layout
+## Project structure
 
 ```
 WildGuard_AI/
-├── app.py                     Streamlit UI: hero, KPIs, three feature tabs
-├── requirements.txt
-├── pyproject.toml             pytest + ruff configuration
-├── .streamlit/config.toml     dark theme
-├── .vscode/                   VS Code settings, launch/debug, tasks, extensions
-│   ├── settings.json
-│   ├── launch.json            "Streamlit: WildGuard AI dashboard" + "Pytest: full suite"
-│   ├── tasks.json             install deps / run dashboard / run tests
-│   └── extensions.json
-├── .github/workflows/ci.yml   ruff + pytest on every push and PR
-├── data/                      sample CSVs generated on first run (git-ignored)
-├── src/
-│   ├── data_loader.py         sample-data generation + CSV loading/validation
-│   ├── threat_intel.py        IOC enrichment and the risk-scoring model
-│   ├── alerts.py              detection rules and the alert engine
-│   └── analytics.py           Plotly figures and KPI computation
-└── tests/test_pipeline.py     pytest suite covering the whole pipeline
+├── app.py                                  Home page: hero, 3 feature cards, KPIs, model card
+├── pages/
+│   ├── 1_🧠_Threat_Intelligence.py         Feature 1 — risk model, hotspots, model card, what-if
+│   ├── 2_🚨_Smart_Alerts.py                Feature 2 — fused alert queue + briefings
+│   └── 3_📊_Wildlife_Event_Intelligence.py Feature 3 — species, biodiversity, sensors, map
+├── wildguard/                              importable Python package (all the logic)
+│   ├── config.py                           paths, domain vocabulary, risk bands
+│   ├── data/
+│   │   ├── generator.py                    synthetic reserve telemetry + labels
+│   │   └── loader.py                       CSV validation, defaults, derived columns
+│   ├── ml/
+│   │   ├── features.py                     feature engineering + sklearn preprocessor
+│   │   ├── risk_model.py                   poaching-risk classifier, metrics, importances
+│   │   ├── anomaly.py                      Isolation Forest over zone/day profiles
+│   │   ├── hotspots.py                     risk-weighted KMeans hotspots
+│   │   └── registry.py                     train / cache / load model artefacts
+│   ├── intelligence/
+│   │   ├── alerts.py                       9-rule alert engine fused with model output
+│   │   ├── analytics.py                    wildlife analytics + Plotly figures
+│   │   └── modelviz.py                     ROC, confusion matrix, importance charts
+│   └── ui/
+│       ├── theme.py                        page config + CSS skin
+│       ├── components.py                   hero, feature cards, KPI row, downloads
+│       └── state.py                        cached loading, filters, sidebar controls
+├── scripts/train_models.py                 CLI trainer
+├── tests/                                  pytest suite (data, models, intelligence)
+├── data/  models/                          generated CSVs and model artefacts (git-ignored)
+├── .streamlit/config.toml                  dark theme
+├── .vscode/                                settings, launch/debug, tasks, extensions
+└── .github/workflows/ci.yml                ruff + pytest on every push and PR
 ```
 
-### Running it in VS Code
+## Running it in VS Code
 
-1. Open the folder, accept the recommended extensions.
-2. `Ctrl+Shift+P` → *Python: Create Environment* → venv → `requirements.txt`.
-3. Press `F5` and pick **Streamlit: WildGuard AI dashboard** (or run the *Run dashboard* task).
+1. Open the folder and accept the recommended extensions.
+2. `Ctrl+Shift+P` → **Python: Create Environment** → `venv` → `requirements.txt`.
+3. Press `F5` and choose **Streamlit: WildGuard AI dashboard** (or run the *Run dashboard* task
+   with `Ctrl+Shift+B`).
+4. Tests appear in the Testing panel automatically (`pytest`).
 
-## Tests
+## The models
+
+**1. Poaching-risk classifier** — `HistGradientBoostingClassifier` on 13 numeric + 5 categorical
+features (detector confidence, night flag, cyclical hour, patrol coverage, hours since patrol,
+proximity to boundary/road/village, zone, sensor type, signal, weather …). Stratified 75/25 split;
+typical holdout performance on the bundled dataset:
+
+| ROC AUC | PR AUC | Accuracy | Precision | Recall | F1 | Brier |
+| --- | --- | --- | --- | --- | --- | --- |
+| ≈ 0.82 | ≈ 0.87 | ≈ 76% | ≈ 78% | ≈ 83% | ≈ 0.80 | ≈ 0.17 |
+
+Explainability comes from **permutation importance on the holdout set**, shown in the UI.
+
+**2. Zone anomaly detector** — `IsolationForest` over daily per-zone behaviour profiles
+(event volume, threat ratio, night ratio, mean confidence, distinct signals, patrol coverage),
+surfaced as a 0-100 anomaly score that feeds the alert engine.
+
+**3. Hotspot clustering** — `KMeans` over detection coordinates weighted by predicted risk, giving
+patrol-ready hotspot centroids.
+
+Risk bands: **Critical ≥ 75**, **High ≥ 50**, **Medium ≥ 25**, otherwise **Low**.
+
+## Using your own data
+
+Upload a CSV from the sidebar on any page.
+
+* **Required columns:** `timestamp`, `zone`, `signal`
+* **Optional:** `sensor_id`, `sensor_type`, `confidence`, `detected_count`, `latitude`,
+  `longitude`, `distance_to_boundary_km`, `distance_to_road_km`, `distance_to_village_km`,
+  `patrol_coverage`, `hours_since_patrol`, `weather`, `temperature_c`, `is_night`
+* **Optional label:** `is_poaching_incident` (0/1) — present ⇒ the models retrain on your data,
+  absent ⇒ the cached model scores it.
+
+Missing optional columns are filled with safe defaults, bad timestamps are dropped, and missing
+coordinates fall back to the zone centroid.
+
+## Tests & linting
 
 ```bash
-pytest -q
+pytest -q          # 24 tests: data validation, model quality, alerts, analytics
+ruff check .
 ```
 
-## Risk model
-
-```
-risk = 45·(ioc_confidence/100) + 20·((avg_severity-1)/4) + 10·blocked_ratio
-     + 15·norm(event_count) + 10·norm(distinct_targets)
-```
-
-Bands: Critical ≥ 80, High ≥ 60, Medium ≥ 35, otherwise Low.
+The model test asserts the classifier beats random by a wide margin (`ROC AUC > 0.7`), so a broken
+feature pipeline fails CI rather than silently degrading the dashboard.
 
 ## Resume bullets
 
-* Built a Streamlit threat-intelligence dashboard that correlates 4k+ security events against an IOC feed and ranks source IPs with an explainable 0–100 risk model.
-* Implemented a detection engine of 6 rule-based and statistical (z-score) detections mapped to MITRE ATT&CK, with live-tunable thresholds and CSV export.
-* Delivered interactive Plotly analytics (timeline, heatmap, geo, risk scatter) with validated CSV ingestion and a pytest suite covering the ingestion → enrichment → detection pipeline.
+* Built an end-to-end ML platform (scikit-learn + Streamlit) that scores 6k+ wildlife-sensor
+  detections for poaching risk with a gradient-boosted classifier (ROC AUC ≈ 0.82) and explains
+  predictions with permutation importance and a full model card.
+* Fused supervised risk scores, Isolation Forest anomaly detection and 9 domain rules into a
+  ranked alert queue with recommended ranger actions and live-tunable thresholds.
+* Shipped a 4-page analytics dashboard (species activity, biodiversity indices, sensor health,
+  KMeans poaching hotspots) with validated CSV ingestion, model caching and a 24-test pytest suite
+  running in GitHub Actions.
 
-Sample data is synthetic and generated locally, so the dashboard is safe to demo anywhere.
+All bundled data is synthetic and generated locally, so the project is safe to demo anywhere.
