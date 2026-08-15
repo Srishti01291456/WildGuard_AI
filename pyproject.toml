@@ -1,0 +1,16 @@
+[project]
+name = "wildguard-ai"
+version = "1.0.0"
+description = "WildGuard AI - Streamlit threat intelligence dashboard with IOC risk scoring, smart alerts and event analytics"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
